@@ -1,9 +1,7 @@
 'use client';
 
-import { useDemo } from '@/hooks/useDemo';
 import { useGarmin } from '@/hooks/useGarmin';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { Card } from '@/components/ui/Card';
 import { Tabs } from '@/components/ui/Tabs';
 import { SleepSummary } from '@/components/garmin/SleepSummary';
@@ -12,7 +10,6 @@ import { RestingHrChart } from '@/components/garmin/RestingHrChart';
 import { BodyBattery } from '@/components/garmin/BodyBattery';
 import { ActivityCards } from '@/components/garmin/ActivityCards';
 import { TrainingLoad } from '@/components/garmin/TrainingLoad';
-import { Watch } from 'lucide-react';
 
 const TABS = [
   { id: 'sleep', label: 'Sleep' },
@@ -24,23 +21,7 @@ const TABS = [
 ];
 
 export default function GarminPage() {
-  const { isDemo } = useDemo();
   const { data, isLoading } = useGarmin(30);
-
-  if (!isDemo) {
-    return (
-      <div className="p-6">
-        <PageHeader title="Garmin" description="Wearable data and recovery metrics" />
-        <EmptyState
-          icon={Watch}
-          title="No Garmin data"
-          description="Upload your Garmin Connect CSV export to see sleep, HRV, heart rate, and activity data."
-          ctaLabel="Upload Garmin Data"
-          ctaHref="/dashboard/upload"
-        />
-      </div>
-    );
-  }
 
   const latest = data[data.length - 1] ?? null;
 

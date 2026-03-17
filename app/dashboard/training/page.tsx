@@ -1,6 +1,5 @@
 'use client';
 
-import { useDemo } from '@/hooks/useDemo';
 import { useActiveProgram } from '@/hooks/useTraining';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -18,23 +17,7 @@ const TABS = [
 ];
 
 export default function TrainingPage() {
-  const { isDemo } = useDemo();
   const { program, isLoading } = useActiveProgram();
-
-  if (!isDemo) {
-    return (
-      <div className="p-6">
-        <PageHeader title="Training" description="Programs and workout logging" />
-        <EmptyState
-          icon={Dumbbell}
-          title="No training program"
-          description="Generate an AI training program based on your goals, 1RMs, and genomic profile."
-          ctaLabel="Generate Program"
-          ctaHref="/dashboard/training?tab=generate"
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="p-6">

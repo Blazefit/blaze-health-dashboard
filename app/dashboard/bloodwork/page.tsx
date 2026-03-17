@@ -1,11 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Droplets } from 'lucide-react';
-import { useDemo } from '@/hooks/useDemo';
 import { useBiomarkerTrend, useLatestBiomarkers } from '@/hooks/useBiomarkers';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { Tabs } from '@/components/ui/Tabs';
 import { Card } from '@/components/ui/Card';
 import { MarkerRow } from '@/components/bloodwork/MarkerRow';
@@ -217,23 +214,7 @@ const TABS = [
 ];
 
 export default function BloodworkPage() {
-  const { isDemo } = useDemo();
   const { biomarkers, isLoading } = useLatestBiomarkers();
-
-  if (!isDemo) {
-    return (
-      <div className="p-6">
-        <PageHeader title="Blood Work" description="Lab panels and biomarker trends" />
-        <EmptyState
-          icon={Droplets}
-          title="No blood work data"
-          description="Upload a CSV from Rythm Health, Function Health, or any lab provider to track your biomarkers."
-          ctaLabel="Upload Blood Work"
-          ctaHref="/dashboard/upload"
-        />
-      </div>
-    );
-  }
 
   if (isLoading) {
     return (

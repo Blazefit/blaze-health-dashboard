@@ -1,34 +1,14 @@
 'use client';
 
-import { useDemo } from '@/hooks/useDemo';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { Card } from '@/components/ui/Card';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { GlucoseTrend } from '@/components/cgm/GlucoseTrend';
 import { HypoLog } from '@/components/cgm/HypoLog';
 import { GenomicContext } from '@/components/cgm/GenomicContext';
-import { Activity } from 'lucide-react';
 import { demoCgmReadings } from '@/lib/demo-data';
 
 export default function CgmPage() {
-  const { isDemo } = useDemo();
-
-  if (!isDemo) {
-    return (
-      <div className="p-6">
-        <PageHeader title="CGM Data" description="Continuous glucose monitoring" />
-        <EmptyState
-          icon={Activity}
-          title="No CGM data"
-          description="Upload your FreeStyle Libre CSV export to view glucose trends, AGP, and hypoglycemic events."
-          ctaLabel="Upload CGM Data"
-          ctaHref="/dashboard/upload"
-        />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6 p-6">
       <PageHeader

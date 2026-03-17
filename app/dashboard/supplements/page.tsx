@@ -1,14 +1,11 @@
 'use client';
 
-import { useDemo } from '@/hooks/useDemo';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { Tabs } from '@/components/ui/Tabs';
 import { ProtocolTimeline } from '@/components/supplements/ProtocolTimeline';
 import { CompoundCard } from '@/components/supplements/CompoundCard';
 import { ContraindicationBanner } from '@/components/supplements/ContraindicationBanner';
 import { PeptideCycleCalendar } from '@/components/supplements/PeptideCycleCalendar';
-import { Pill } from 'lucide-react';
 
 const TABS = [
   { id: 'stack', label: 'Daily Stack' },
@@ -17,24 +14,7 @@ const TABS = [
 ];
 
 export default function SupplementsPage() {
-  const { isDemo } = useDemo();
-
-  if (!isDemo) {
-    return (
-      <div className="p-6">
-        <PageHeader title="Supplements" description="Protocol management and cycling" />
-        <EmptyState
-          icon={Pill}
-          title="No supplement protocol"
-          description="Create a supplement protocol to track your daily stack, timing, and genomic rationale."
-          ctaLabel="Create Protocol"
-          ctaHref="/dashboard/supplements?tab=create"
-        />
-      </div>
-    );
-  }
-
-  // Load demo data only when in demo mode
+  // Load demo data when in demo mode, otherwise use API data
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { demoSupplementProtocol } = require('@/lib/demo-data');
   const protocol = demoSupplementProtocol;
