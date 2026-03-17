@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
-import { ClerkProvider } from '@clerk/nextjs';
 import { DemoProvider } from '@/hooks/useDemo';
 import { Sidebar } from '@/components/layout/Sidebar';
 import './globals.css';
@@ -21,25 +20,36 @@ export const metadata: Metadata = {
   description: 'Personal health intelligence dashboard',
 };
 
+// Conditionally import ClerkProvider only when keys are configured
+let ClerkProvider: React.ComponentType<{ children: React.ReactNode }> | null = null;
+if (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  ClerkProvider = require('@clerk/nextjs').ClerkProvider;
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <ClerkProvider>
-      <html lang="en">
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 dark:bg-gray-950`}
-        >
-          <DemoProvider>
-            <Sidebar />
-            <main className="ml-16 md:ml-64 min-h-screen transition-all">
-              {children}
-            </main>
-          </DemoProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+  const content = (
+    <html lang="en">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 dark:bg-gray-950`}
+      >
+        <DemoProvider>
+          <Sidebar />
+          <main className="ml-16 md:ml-64 min-h-screen transition-all">
+            {children}
+          </main>
+        </DemoProvider>
+      </body>
+    </html>
   );
+
+  if (ClerkProvider) {
+    return <ClerkProvider>{content}</ClerkProvider>;
+  }
+
+  return content;
 }
