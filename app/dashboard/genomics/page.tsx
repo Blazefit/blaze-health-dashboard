@@ -17,6 +17,22 @@ export default function GenomicsPage() {
   const { snps, isLoading } = useGenomics();
   const [activeCategory, setActiveCategory] = useState<SnpCategory | null>(null);
 
+  // Per-category counts for filter badges — hooks must be called before any early return
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: snps.length };
+    snps.forEach((s) => {
+      counts[s.category] = (counts[s.category] ?? 0) + 1;
+    });
+    return counts;
+  }, [snps]);
+
+  const filteredSnps = useMemo(
+    () => (activeCategory ? snps.filter((s) => s.category === activeCategory) : snps),
+    [snps, activeCategory]
+  );
+
+  const actionableCount = filteredSnps.filter((s) => s.risk_level !== 'clear').length;
+
   // Empty state when not in demo mode and no data
   if (!isDemo && !isLoading && snps.length === 0) {
     return (
@@ -32,22 +48,6 @@ export default function GenomicsPage() {
       </div>
     );
   }
-
-  // Per-category counts for filter badges
-  const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: snps.length };
-    snps.forEach((s) => {
-      counts[s.category] = (counts[s.category] ?? 0) + 1;
-    });
-    return counts;
-  }, [snps]);
-
-  const filteredSnps = useMemo(
-    () => (activeCategory ? snps.filter((s) => s.category === activeCategory) : snps),
-    [snps, activeCategory]
-  );
-
-  const actionableCount = filteredSnps.filter((s) => s.risk_level !== 'clear').length;
 
   return (
     <div className="p-6">
