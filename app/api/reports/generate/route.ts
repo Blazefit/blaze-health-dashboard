@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { createServerClient } from '@/lib/supabase';
-import { streamWithClaude } from '@/lib/anthropic';
+import { generateWithClaude } from '@/lib/anthropic';
 
 export async function POST(request: NextRequest) {
   const { userId } = await auth();
@@ -58,7 +58,7 @@ Return ONLY valid JSON:
   });
 
   try {
-    const stream = await streamWithClaude({
+    const response = await generateWithClaude({
       model: 'claude-opus-4-6',
       system: systemPrompt,
       messages: [
@@ -67,8 +67,7 @@ Return ONLY valid JSON:
       maxTokens: 8192,
     });
 
-    const response = await stream.finalMessage();
-    const text = response.content[0].type === 'text' ? response.content[0].text : '';
+    const text = response.content[0].text;
 
     // Parse the JSON response
     let reportContent;

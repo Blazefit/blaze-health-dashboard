@@ -1,8 +1,26 @@
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
+const openrouter = new OpenAI({
+  baseURL: 'https://openrouter.ai/api/v1',
+  apiKey: process.env.OPENROUTER_API_KEY || '',
+  defaultHeaders: {
+    'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+    'X-Title': 'Blaze Health Dashboard',
+  },
 });
+
+// Map our model names to OpenRouter model IDs
+function resolveModel(model?: string): string {
+  switch (model) {
+    case 'claude-opus-4-6':
+    case 'opus':
+      return 'anthropic/claude-opus-4';
+    case 'claude-sonnet-4-20250514':
+    case 'sonnet':
+    default:
+      return 'anthropic/claude-sonnet-4';
+  }
+}
 
 export async function generateWithClaude(params: {
   model?: string;
@@ -10,13 +28,26 @@ export async function generateWithClaude(params: {
   messages: { role: 'user' | 'assistant'; content: string }[];
   maxTokens?: number;
 }) {
-  const response = await anthropic.messages.create({
-    model: params.model || 'claude-sonnet-4-20250514',
+  const response = await openrouter.chat.completions.create({
+    model: resolveModel(params.model),
     max_tokens: params.maxTokens || 4096,
-    system: params.system,
-    messages: params.messages,
+    messages: [
+      { role: 'system', content: params.system },
+      ...params.messages,
+    ],
   });
-  return response;
+
+  // Return in a shape compatible with what the API routes expect
+  return {
+    content: [
+      {
+        type: 'text' as const,
+        text: response.choices[0]?.message?.content || '',
+      },
+    ],
+    model: response.model,
+    usage: response.usage,
+  };
 }
 
 export async function streamWithClaude(params: {
@@ -25,13 +56,17 @@ export async function streamWithClaude(params: {
   messages: { role: 'user' | 'assistant'; content: string }[];
   maxTokens?: number;
 }) {
-  const stream = anthropic.messages.stream({
-    model: params.model || 'claude-sonnet-4-20250514',
+  const stream = await openrouter.chat.completions.create({
+    model: resolveModel(params.model),
     max_tokens: params.maxTokens || 4096,
-    system: params.system,
-    messages: params.messages,
+    stream: true,
+    messages: [
+      { role: 'system', content: params.system },
+      ...params.messages,
+    ],
   });
+
   return stream;
 }
 
-export { anthropic };
+export { openrouter };

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { streamWithClaude } from '@/lib/anthropic';
+import { generateWithClaude } from '@/lib/anthropic';
 
 export async function POST(request: NextRequest) {
   const { userId } = await auth();
@@ -63,7 +63,7 @@ Return ONLY valid JSON in this exact format:
 }`;
 
   try {
-    const stream = await streamWithClaude({
+    const response = await generateWithClaude({
       model: 'claude-opus-4-6',
       system: systemPrompt,
       messages: [
@@ -75,18 +75,9 @@ Return ONLY valid JSON in this exact format:
       maxTokens: 16000,
     });
 
-    // Stream the response
-    const encoder = new TextEncoder();
-    const readable = new ReadableStream({
-      async start(controller) {
-        const response = await stream.finalMessage();
-        const text = response.content[0].type === 'text' ? response.content[0].text : '';
-        controller.enqueue(encoder.encode(text));
-        controller.close();
-      },
-    });
+    const text = response.content[0].text;
 
-    return new Response(readable, {
+    return new Response(text, {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
