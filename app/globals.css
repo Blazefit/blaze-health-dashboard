@@ -1,0 +1,233 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────
+   CSS Custom Properties
+   ───────────────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --background: #f9fafb;   /* gray-50  */
+  --surface:    #ffffff;
+  --surface-2:  #f3f4f6;   /* gray-100 */
+
+  /* Text */
+  --foreground: #111827;   /* gray-900 */
+  --muted:      #6b7280;   /* gray-500 */
+
+  /* Border */
+  --border:     #e5e7eb;   /* gray-200 */
+
+  /* Brand */
+  --primary:    #1D9E75;
+  --primary-fg: #ffffff;
+
+  /* Status */
+  --danger:     #E24B4A;
+  --warning:    #EF9F27;
+  --info:       #378ADD;
+  --purple:     #7F77DD;
+  --coral:      #D85A30;
+  --success:    #1D9E75;
+
+  /* Scrollbar */
+  --scrollbar-track: #f1f5f9;
+  --scrollbar-thumb: #cbd5e1;
+}
+
+.dark {
+  /* Surfaces */
+  --background: #030712;   /* gray-950 */
+  --surface:    #111827;   /* gray-900 */
+  --surface-2:  #1f2937;   /* gray-800 */
+
+  /* Text */
+  --foreground: #f9fafb;   /* gray-50  */
+  --muted:      #9ca3af;   /* gray-400 */
+
+  /* Border */
+  --border:     #374151;   /* gray-700 */
+
+  /* Scrollbar */
+  --scrollbar-track: #1f2937;
+  --scrollbar-thumb: #4b5563;
+}
+
+/* ─────────────────────────────────────────────
+   Base Layer
+   ───────────────────────────────────────────── */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    color: var(--foreground);
+    background-color: var(--background);
+    font-family: Inter, system-ui, sans-serif;
+    line-height: 1.6;
+    min-height: 100dvh;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.25;
+    font-weight: 600;
+    color: var(--foreground);
+  }
+
+  a {
+    color: var(--primary);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   Custom Scrollbar
+   ───────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* ─────────────────────────────────────────────
+   Component Layer
+   ───────────────────────────────────────────── */
+@layer components {
+
+  /* --- Metric Card --- */
+  .metric-card {
+    @apply rounded-xl border bg-[var(--surface)] p-5
+           shadow-card transition-shadow duration-200
+           hover:shadow-card-hover
+           dark:shadow-card-dark dark:border-[var(--border)];
+  }
+
+  .metric-card-value {
+    @apply text-3xl font-bold tracking-tight text-[var(--foreground)];
+  }
+
+  .metric-card-label {
+    @apply text-sm font-medium text-[var(--muted)];
+  }
+
+  .metric-card-delta-up {
+    @apply inline-flex items-center gap-1 text-xs font-semibold text-primary-500;
+  }
+
+  .metric-card-delta-down {
+    @apply inline-flex items-center gap-1 text-xs font-semibold text-danger-500;
+  }
+
+  /* --- Status Pills --- */
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5
+           text-xs font-semibold leading-5 whitespace-nowrap;
+  }
+
+  .pill-success {
+    @apply pill bg-primary-50 text-primary-700
+           dark:bg-primary-950 dark:text-primary-300;
+  }
+
+  .pill-danger {
+    @apply pill bg-red-50 text-danger-600
+           dark:bg-red-950 dark:text-danger-400;
+  }
+
+  .pill-warning {
+    @apply pill bg-amber-50 text-warning-600
+           dark:bg-amber-950 dark:text-warning-400;
+  }
+
+  .pill-info {
+    @apply pill bg-blue-50 text-info-600
+           dark:bg-blue-950 dark:text-info-400;
+  }
+
+  .pill-purple {
+    @apply pill bg-violet-50 text-purple-600
+           dark:bg-violet-950 dark:text-purple-300;
+  }
+
+  .pill-coral {
+    @apply pill bg-orange-50 text-coral-600
+           dark:bg-orange-950 dark:text-coral-400;
+  }
+
+  .pill-neutral {
+    @apply pill bg-gray-100 text-gray-600
+           dark:bg-gray-800 dark:text-gray-300;
+  }
+
+  /* --- Section Header --- */
+  .section-header {
+    @apply flex items-center justify-between mb-4;
+  }
+
+  .section-title {
+    @apply text-base font-semibold text-[var(--foreground)];
+  }
+
+  /* --- Dashboard Layout --- */
+  .dashboard-grid {
+    @apply grid gap-4
+           grid-cols-1
+           sm:grid-cols-2
+           lg:grid-cols-4;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   Utilities Layer
+   ───────────────────────────────────────────── */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .bg-surface {
+    background-color: var(--surface);
+  }
+
+  .bg-surface-2 {
+    background-color: var(--surface-2);
+  }
+
+  .text-muted {
+    color: var(--muted);
+  }
+
+  .border-default {
+    border-color: var(--border);
+  }
+}
