@@ -1,24 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
-import { createServerClient } from '@/lib/supabase';
+import { createServerClient, getAuthenticatedProfile } from '@/lib/supabase';
 import { parseBloodworkCsv } from '@/lib/parsers/bloodwork';
 
 export async function POST(request: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const supabase = createServerClient();
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('clerk_id', userId)
-    .single();
-
-  if (!profile) {
-    return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
-  }
+  const profile = await getAuthenticatedProfile(supabase);
+  if (!profile) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { upload_id, source, date } = await request.json();
 

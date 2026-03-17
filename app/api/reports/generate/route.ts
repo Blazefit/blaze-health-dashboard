@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
-import { createServerClient } from '@/lib/supabase';
+import { createServerClient, getAuthenticatedProfile } from '@/lib/supabase';
 import { generateWithClaude } from '@/lib/anthropic';
 
 export async function POST(request: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
   const supabase = createServerClient();
-  const { data: profile } = await supabase
-    .from('profiles').select('*').eq('clerk_id', userId).single();
-  if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+  const profile = await getAuthenticatedProfile(supabase);
+  if (!profile) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  // Re-fetch profile with full details for the report
+  const { data: fullProfile } = await supabase
+    .from('profiles').select('*').eq('id', profile.id).single();
 
   const { report_type = 'comprehensive' } = await request.json();
 
@@ -27,7 +26,7 @@ export async function POST(request: NextRequest) {
   const systemPrompt = `You are an expert health intelligence analyst creating a ${report_type} health report for a patient.
 Analyze ALL provided data and create cross-references between genomic markers and biomarker values.
 
-Patient: ${profile.full_name}, ${profile.sex}, Age: calculated from ${profile.date_of_birth}
+Patient: ${fullProfile?.full_name || 'Unknown'}, ${fullProfile?.sex || 'unknown'}, Age: calculated from ${fullProfile?.date_of_birth || 'unknown'}
 
 INSTRUCTIONS:
 - Cross-reference genomic data with biomarker values (e.g., "FADS1 TT + low omega-3 index = confirmed conversion deficit")
@@ -69,24 +68,20 @@ Return ONLY valid JSON:
 
     const text = response.content[0].text;
 
-    // Parse the JSON response
     let reportContent;
     try {
       reportContent = JSON.parse(text);
     } catch {
-      // Try to extract JSON from markdown code block
       const match = text.match(/```json?\s*([\s\S]*?)```/);
       reportContent = match ? JSON.parse(match[1]) : { executive_summary: text, key_findings: [], data_source_analysis: {}, cross_references: [], risk_assessment: [], recommendations: [], follow_up_schedule: [] };
     }
 
-    // Supersede previous current report
     await supabase
       .from('health_reports')
       .update({ status: 'superseded' })
       .eq('user_id', profile.id)
       .eq('status', 'current');
 
-    // Save new report
     const { data: report, error } = await supabase
       .from('health_reports')
       .insert({

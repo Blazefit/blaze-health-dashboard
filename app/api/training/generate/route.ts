@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getAuthenticatedProfile } from '@/lib/supabase';
 import { generateWithClaude } from '@/lib/anthropic';
 
 export async function POST(request: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const profile = await getAuthenticatedProfile();
+  if (!profile) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { duration_weeks, goal, bench_1rm, squat_1rm, days_per_week, constraints, equipment, genomic_notes } =
     await request.json();

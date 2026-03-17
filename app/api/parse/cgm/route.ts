@@ -1,24 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
-import { createServerClient } from '@/lib/supabase';
+import { createServerClient, getAuthenticatedProfile } from '@/lib/supabase';
 import { parseCgmCsv } from '@/lib/parsers/cgm';
 
 export async function POST(request: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const supabase = createServerClient();
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('clerk_id', userId)
-    .single();
-
-  if (!profile) {
-    return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
-  }
+  const profile = await getAuthenticatedProfile(supabase);
+  if (!profile) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { upload_id } = await request.json();
 
@@ -41,7 +28,6 @@ export async function POST(request: NextRequest) {
 
     const { readings, summary } = parseCgmCsv(csvContent, profile.id);
 
-    // Insert readings in batches of 500
     const batchSize = 500;
     for (let i = 0; i < readings.length; i += batchSize) {
       const batch = readings.slice(i, i + batchSize).map((r) => ({
@@ -52,7 +38,6 @@ export async function POST(request: NextRequest) {
       if (error) throw error;
     }
 
-    // Insert summary
     const { error: summaryError } = await supabase
       .from('cgm_summaries')
       .insert({ ...summary, upload_id });
