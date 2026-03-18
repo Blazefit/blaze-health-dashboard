@@ -40,7 +40,7 @@ export default function RootLayout({
       >
         <DemoProvider>
           <Sidebar />
-          <main className="ml-[68px] min-h-screen transition-all">
+          <main className="md:ml-[68px] pt-14 pb-16 md:pt-0 md:pb-0 min-h-screen transition-all">
             {children}
           </main>
         </DemoProvider>

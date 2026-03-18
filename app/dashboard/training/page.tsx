@@ -8,7 +8,8 @@ import { WorkoutLogger } from '@/components/training/WorkoutLogger';
 import {
   Dumbbell, CalendarDays, Sparkles, ClipboardList, Loader2, CheckCircle2,
 } from 'lucide-react';
-import type { ProgramDay, ProgramWeek, TrainingProgram, WorkoutLog } from '@/lib/types';
+import { normalizeProgramData } from '@/lib/training-utils';
+import type { ProgramDay, TrainingProgram, WorkoutLog } from '@/lib/types';
 
 const TABS = [
   { id: 'program', label: 'Program', Icon: ClipboardList },
@@ -19,15 +20,9 @@ const TABS = [
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-/** Get normalized weeks from program data */
-function getWeeks(program: TrainingProgram): ProgramWeek[] {
-  if (Array.isArray(program.program_data)) return program.program_data;
-  return [];
-}
-
-/** Find the current week's days */
+/** Find the current week's days using the shared normalizer */
 function getCurrentWeekDays(program: TrainingProgram): ProgramDay[] {
-  const weeks = getWeeks(program);
+  const weeks = normalizeProgramData(program);
   const currentWeekIdx = Math.max(0, (program.current_week || 1) - 1);
   return weeks[currentWeekIdx]?.days || weeks[0]?.days || [];
 }
