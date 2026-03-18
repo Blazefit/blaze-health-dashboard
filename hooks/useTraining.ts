@@ -2,9 +2,8 @@
 
 import useSWR from 'swr';
 import { useDemo } from './useDemo';
+import { fetcher } from '@/lib/fetcher';
 import type { TrainingProgram, WorkoutLog } from '@/lib/types';
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export function useActiveProgram() {
   const { isDemo } = useDemo();

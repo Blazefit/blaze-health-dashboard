@@ -2,9 +2,8 @@
 
 import useSWR from 'swr';
 import { useDemo } from './useDemo';
+import { fetcher } from '@/lib/fetcher';
 import type { GarminDaily } from '@/lib/types';
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export function useGarmin(days = 30) {
   const { isDemo } = useDemo();

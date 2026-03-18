@@ -28,17 +28,17 @@ export async function getAuthenticatedProfile(supabaseClient?: ReturnType<typeof
     try {
       const { auth } = await import('@clerk/nextjs/server');
       const { userId } = await auth();
-      if (!userId) return null;
-
-      const { data: profile } = await sb
-        .from('profiles').select('id').eq('clerk_id', userId).single();
-      return profile;
+      if (userId) {
+        const { data: profile } = await sb
+          .from('profiles').select('id').eq('clerk_id', userId).single();
+        if (profile) return profile;
+      }
     } catch {
-      return null;
+      // Clerk auth failed — fall through to seed user fallback
     }
   }
 
-  // No Clerk — fall back to first profile (seed user)
+  // Fall back to first profile (seed user) when Clerk is not configured or user is not signed in
   const { data: profile } = await sb
     .from('profiles').select('id').limit(1).single();
   return profile;

@@ -2,9 +2,8 @@
 
 import useSWR from 'swr';
 import { useDemo } from './useDemo';
+import { fetcher } from '@/lib/fetcher';
 import type { GenomicSnp, SnpCategory } from '@/lib/types';
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export function useGenomics() {
   const { isDemo } = useDemo();
