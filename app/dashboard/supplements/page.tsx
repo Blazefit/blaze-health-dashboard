@@ -6,6 +6,7 @@ import { PeptideCycleCalendar } from '@/components/supplements/PeptideCycleCalen
 import { SupplementEditor } from '@/components/supplements/SupplementEditor';
 import {
   Pill, Syringe, CalendarDays, Plus, Pencil, Trash2, Loader2, AlertTriangle, X,
+  ChevronDown, Copy, Check, Save,
 } from 'lucide-react';
 import type { Supplement, Contraindication, SupplementProtocol } from '@/lib/types';
 
@@ -16,13 +17,18 @@ const TABS = [
 ];
 
 export default function SupplementsPage() {
-  const { activeProtocol, isLoading, mutate } = useSupplements();
+  const { protocols, activeProtocol, setSelectedId, isLoading, mutate } = useSupplements();
   const [activeTab, setActiveTab] = useState('stack');
   const [editingSupplement, setEditingSupplement] = useState<Supplement | null | undefined>(undefined);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [showContraForm, setShowContraForm] = useState(false);
   const [contraForm, setContraForm] = useState({ compound: '', reason: '' });
+  const [showProtocolMenu, setShowProtocolMenu] = useState(false);
+  const [renamingProtocol, setRenamingProtocol] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [newName, setNewName] = useState('');
 
   // Normalize seeded timing values (e.g. 'throughout_day' -> 'active')
   const protocol = useMemo<SupplementProtocol | null>(() => {
@@ -85,6 +91,67 @@ export default function SupplementsPage() {
     setConfirmDelete(null);
   }
 
+  async function handleCreateProtocol(name: string, copyFrom?: SupplementProtocol | null) {
+    setSaving(true);
+    try {
+      const body: Record<string, unknown> = {
+        name,
+        is_active: false,
+        supplements: copyFrom ? copyFrom.supplements : [],
+        contraindications: copyFrom ? copyFrom.contraindications : [],
+        notes: copyFrom ? copyFrom.notes : '',
+      };
+      const res = await fetch('/api/supplements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const created = await res.json();
+      await mutate();
+      if (created?.id) setSelectedId(created.id);
+      setShowNewForm(false);
+      setNewName('');
+    } catch (err) {
+      console.error('Create failed:', err);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleRenameProtocol() {
+    if (!protocol || !renameValue.trim()) return;
+    await saveProtocol({ name: renameValue.trim() });
+    setRenamingProtocol(false);
+  }
+
+  async function handleSetActive(id: string) {
+    setSaving(true);
+    try {
+      // Deactivate all others first
+      for (const p of protocols) {
+        if (p.is_active && p.id !== id) {
+          await fetch('/api/supplements', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: p.id, is_active: false }),
+          });
+        }
+      }
+      // Activate selected
+      await fetch('/api/supplements', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, is_active: true }),
+      });
+      await mutate();
+      setSelectedId(id);
+    } catch (err) {
+      console.error('Set active failed:', err);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   function handleAddContraindication() {
     if (!protocol || !contraForm.compound.trim() || !contraForm.reason.trim()) return;
     const updated: Contraindication[] = [
@@ -134,7 +201,26 @@ export default function SupplementsPage() {
           <p className="mb-6 max-w-sm text-sm" style={{ color: 'var(--muted)' }}>
             Create a protocol to start tracking your supplement and peptide stack.
           </p>
+          <button
+            onClick={() => setShowNewForm(true)}
+            className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium text-white hover:brightness-110"
+            style={{ background: 'var(--green)' }}
+          >
+            <Plus className="h-4 w-4" />
+            Create Protocol
+          </button>
         </div>
+        {/* New protocol form modal */}
+        {showNewForm && (
+          <NewProtocolModal
+            name={newName}
+            onNameChange={setNewName}
+            onClose={() => { setShowNewForm(false); setNewName(''); }}
+            onCreate={(name) => handleCreateProtocol(name)}
+            onDuplicate={null}
+            saving={saving}
+          />
+        )}
       </div>
     );
   }
@@ -142,11 +228,11 @@ export default function SupplementsPage() {
   return (
     <div className="p-6 max-w-5xl">
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>Supplements</h1>
           <p className="mt-1 text-sm" style={{ color: 'var(--muted)' }}>
-            {protocol.name} · {supplements.length} compounds · {peptides.length} peptides
+            {supplements.length} compounds · {peptides.length} peptides
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -161,6 +247,155 @@ export default function SupplementsPage() {
           </button>
         </div>
       </div>
+
+      {/* Protocol Switcher */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Current protocol name — editable */}
+          {renamingProtocol ? (
+            <div className="flex items-center gap-2">
+              <input
+                autoFocus
+                type="text"
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleRenameProtocol(); if (e.key === 'Escape') setRenamingProtocol(false); }}
+                className="rounded-lg px-3 py-1.5 text-sm font-semibold outline-none"
+                style={{ background: 'var(--surface)', border: '1px solid var(--green)', color: 'var(--foreground)', minWidth: 200 }}
+              />
+              <button
+                onClick={handleRenameProtocol}
+                className="rounded-lg p-1.5 hover:bg-white/[0.06]"
+                title="Save name"
+              >
+                <Check className="h-4 w-4" style={{ color: 'var(--green)' }} />
+              </button>
+              <button
+                onClick={() => setRenamingProtocol(false)}
+                className="rounded-lg p-1.5 hover:bg-white/[0.06]"
+                title="Cancel"
+              >
+                <X className="h-4 w-4" style={{ color: 'var(--muted)' }} />
+              </button>
+            </div>
+          ) : (
+            <div className="relative">
+              <button
+                onClick={() => setShowProtocolMenu((v) => !v)}
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all hover:brightness-110"
+                style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--foreground)' }}
+              >
+                {protocol.is_active && <span className="h-2 w-2 rounded-full" style={{ background: 'var(--green)' }} />}
+                {protocol.name}
+                <ChevronDown className="h-3.5 w-3.5" style={{ color: 'var(--muted)' }} />
+              </button>
+
+              {/* Dropdown */}
+              {showProtocolMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowProtocolMenu(false)} />
+                  <div
+                    className="absolute left-0 top-full mt-2 z-50 w-80 rounded-xl shadow-lg overflow-hidden"
+                    style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+                  >
+                    {/* Saved protocols */}
+                    <div className="py-1">
+                      <p className="px-4 py-2 text-[10px] uppercase tracking-wide font-semibold" style={{ color: 'var(--muted-2)' }}>
+                        Saved Stacks
+                      </p>
+                      {protocols.map((p) => (
+                        <button
+                          key={p.id}
+                          onClick={() => { setSelectedId(p.id); setShowProtocolMenu(false); }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-white/[0.04]"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              {p.is_active && <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: 'var(--green)' }} />}
+                              <span
+                                className="text-sm font-medium truncate"
+                                style={{ color: p.id === protocol.id ? 'var(--green)' : 'var(--foreground)' }}
+                              >
+                                {p.name}
+                              </span>
+                            </div>
+                            <p className="text-xs mt-0.5" style={{ color: 'var(--muted-2)' }}>
+                              {(p.supplements || []).length} compounds
+                              {p.is_active ? ' · Active' : ''}
+                            </p>
+                          </div>
+                          {p.id === protocol.id && (
+                            <Check className="h-4 w-4 shrink-0" style={{ color: 'var(--green)' }} />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div style={{ borderTop: '1px solid var(--border)' }}>
+                      {/* Rename */}
+                      <button
+                        onClick={() => { setRenameValue(protocol.name); setRenamingProtocol(true); setShowProtocolMenu(false); }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors hover:bg-white/[0.04]"
+                        style={{ color: 'var(--muted)' }}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                        Rename
+                      </button>
+                      {/* Duplicate */}
+                      <button
+                        onClick={() => { setShowNewForm(true); setShowProtocolMenu(false); }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors hover:bg-white/[0.04]"
+                        style={{ color: 'var(--muted)' }}
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                        Duplicate as New Stack
+                      </button>
+                      {/* New blank */}
+                      <button
+                        onClick={() => { setNewName(''); setShowNewForm(true); setShowProtocolMenu(false); }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors hover:bg-white/[0.04]"
+                        style={{ color: 'var(--muted)' }}
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        New Blank Stack
+                      </button>
+                      {/* Set as active */}
+                      {!protocol.is_active && (
+                        <button
+                          onClick={() => { handleSetActive(protocol.id); setShowProtocolMenu(false); }}
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors hover:bg-white/[0.04]"
+                          style={{ color: 'var(--green)' }}
+                        >
+                          <Save className="h-3.5 w-3.5" />
+                          Set as Active Protocol
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {protocol.is_active && (
+            <span className="rounded-full px-2.5 py-0.5 text-[10px] font-medium" style={{ background: 'var(--green-bg)', color: 'var(--green)' }}>
+              Active
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* New Protocol Modal */}
+      {showNewForm && (
+        <NewProtocolModal
+          name={newName}
+          onNameChange={setNewName}
+          onClose={() => { setShowNewForm(false); setNewName(''); }}
+          onCreate={(name) => handleCreateProtocol(name)}
+          onDuplicate={protocol ? () => handleCreateProtocol(newName || `${protocol.name} (copy)`, protocol) : null}
+          saving={saving}
+        />
+      )}
 
       {/* Tabs */}
       <div className="mb-6 flex gap-1 rounded-xl p-1" style={{ background: 'var(--surface)' }}>
@@ -561,6 +796,74 @@ function ContraindicationSection({
           <p className="text-xs" style={{ color: 'var(--muted-2)' }}>No contraindications logged.</p>
         </div>
       )}
+    </div>
+  );
+}
+
+// ── New Protocol Modal ─────────────────────────────────────
+
+function NewProtocolModal({
+  name,
+  onNameChange,
+  onClose,
+  onCreate,
+  onDuplicate,
+  saving,
+}: {
+  name: string;
+  onNameChange: (v: string) => void;
+  onClose: () => void;
+  onCreate: (name: string) => void;
+  onDuplicate: (() => void) | null;
+  saving: boolean;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
+      <div className="w-full max-w-md rounded-2xl p-6" style={{ background: 'var(--background)' }}>
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-lg font-bold" style={{ color: 'var(--foreground)' }}>New Stack</h3>
+          <button onClick={onClose} className="rounded-lg p-1.5 hover:bg-white/[0.04]">
+            <X className="h-5 w-5" style={{ color: 'var(--muted)' }} />
+          </button>
+        </div>
+        <div className="mb-5">
+          <label className="block text-xs font-medium mb-1.5 uppercase tracking-wide" style={{ color: 'var(--muted-2)' }}>
+            Stack Name
+          </label>
+          <input
+            autoFocus
+            type="text"
+            value={name}
+            onChange={(e) => onNameChange(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && name.trim()) onCreate(name.trim()); }}
+            placeholder="e.g. Summer Cut Stack, Recovery Protocol"
+            className="w-full rounded-lg px-3 py-2.5 text-sm outline-none"
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--foreground)' }}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={() => { if (name.trim()) onCreate(name.trim()); }}
+            disabled={!name.trim() || saving}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-all hover:brightness-110 disabled:opacity-50"
+            style={{ background: 'var(--green)' }}
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            Create Empty Stack
+          </button>
+          {onDuplicate && (
+            <button
+              onClick={() => { if (!name.trim()) onNameChange('Copy'); onDuplicate(); }}
+              disabled={saving}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all hover:brightness-110 disabled:opacity-50"
+              style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--foreground)' }}
+            >
+              <Copy className="h-4 w-4" />
+              Duplicate Current Stack
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
