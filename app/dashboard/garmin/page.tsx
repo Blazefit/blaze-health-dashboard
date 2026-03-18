@@ -4,12 +4,14 @@ import { useGarmin } from '@/hooks/useGarmin';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Tabs } from '@/components/ui/Tabs';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { SleepSummary } from '@/components/garmin/SleepSummary';
 import { HrvChart } from '@/components/garmin/HrvChart';
 import { RestingHrChart } from '@/components/garmin/RestingHrChart';
 import { BodyBattery } from '@/components/garmin/BodyBattery';
 import { ActivityCards } from '@/components/garmin/ActivityCards';
 import { TrainingLoad } from '@/components/garmin/TrainingLoad';
+import { Watch } from 'lucide-react';
 
 const TABS = [
   { id: 'sleep', label: 'Sleep' },
@@ -25,11 +27,26 @@ export default function GarminPage() {
 
   const latest = data[data.length - 1] ?? null;
 
-  if (isLoading || !latest) {
+  if (isLoading) {
     return (
       <div className="p-6">
         <PageHeader title="Garmin" description="Wearable data and recovery metrics" />
         <div className="h-64 animate-pulse rounded-xl bg-gray-100 dark:bg-gray-800" />
+      </div>
+    );
+  }
+
+  if (!latest) {
+    return (
+      <div className="p-6">
+        <PageHeader title="Garmin" description="Wearable data and recovery metrics" />
+        <EmptyState
+          icon={Watch}
+          title="No Garmin data yet"
+          description="Connect your Garmin device or upload your daily summary data to see sleep, HRV, body battery, and activity metrics here."
+          ctaLabel="Upload Garmin Data"
+          ctaHref="/dashboard/upload"
+        />
       </div>
     );
   }
