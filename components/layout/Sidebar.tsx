@@ -13,9 +13,8 @@ import {
   StickyNote,
   FileText,
   Upload,
-  Flame,
+  Settings,
 } from 'lucide-react';
-import { DemoToggle } from './DemoToggle';
 
 const navItems = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -29,7 +28,6 @@ const navItems = [
   { type: 'separator' as const },
   { href: '/dashboard/notes', label: 'Notes', icon: StickyNote },
   { href: '/dashboard/reports', label: 'Reports', icon: FileText },
-  { type: 'separator' as const },
   { href: '/dashboard/upload', label: 'Upload', icon: Upload },
 ];
 
@@ -37,55 +35,66 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950 md:w-64 max-md:w-16 transition-all">
+    <aside
+      className="fixed left-0 top-0 z-40 flex h-screen w-[68px] flex-col items-center py-5 gap-1"
+      style={{ background: 'var(--surface)', borderRight: '1px solid var(--border)' }}
+    >
       {/* Logo */}
-      <div className="flex h-16 items-center gap-3 border-b border-gray-200 px-4 dark:border-gray-800">
-        <Flame className="h-8 w-8 text-accent shrink-0" />
-        <span className="text-xl font-bold text-gray-900 dark:text-white max-md:hidden">
-          Blaze Health
-        </span>
+      <div
+        className="mb-4 flex h-9 w-9 items-center justify-center rounded-[10px]"
+        style={{ background: 'linear-gradient(135deg, #00D68F, #00B876)' }}
+      >
+        <svg viewBox="0 0 24 24" fill="none" strokeWidth="2.5" className="h-5 w-5 stroke-white">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+        </svg>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
-        <ul className="space-y-1">
-          {navItems.map((item, i) => {
-            if ('type' in item && item.type === 'separator') {
-              return (
-                <li key={`sep-${i}`} className="my-3">
-                  <div className="h-px bg-gray-200 dark:bg-gray-800" />
-                </li>
-              );
-            }
-            if (!('href' in item)) return null;
-            const Icon = item.icon;
-            const isActive =
-              item.href === '/dashboard'
-                ? pathname === '/dashboard'
-                : pathname?.startsWith(item.href);
-
+      <nav className="flex flex-1 flex-col items-center gap-1">
+        {navItems.map((item, i) => {
+          if ('type' in item && item.type === 'separator') {
             return (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'border-l-[3px] border-accent bg-green-50 text-accent dark:bg-green-950/30'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-900 dark:hover:text-white'
-                  }`}
-                >
-                  <Icon className="h-5 w-5 shrink-0" />
-                  <span className="max-md:hidden">{item.label}</span>
-                </Link>
-              </li>
+              <div key={`sep-${i}`} className="my-2 h-px w-7" style={{ background: 'rgba(255,255,255,0.06)' }} />
             );
-          })}
-        </ul>
+          }
+          if (!('href' in item)) return null;
+          const Icon = item.icon;
+          const isActive =
+            item.href === '/dashboard'
+              ? pathname === '/dashboard'
+              : pathname?.startsWith(item.href);
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              title={item.label}
+              className="relative flex h-11 w-11 items-center justify-center rounded-xl transition-all hover:bg-white/[0.04]"
+              style={isActive ? { background: 'var(--green-bg)' } : {}}
+            >
+              {isActive && (
+                <span
+                  className="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-sm"
+                  style={{ background: 'var(--green)' }}
+                />
+              )}
+              <Icon
+                className="h-5 w-5 transition-colors"
+                style={{ color: isActive ? 'var(--green)' : 'var(--muted-2)' }}
+              />
+            </Link>
+          );
+        })}
       </nav>
 
-      {/* Demo Toggle */}
-      <div className="border-t border-gray-200 p-4 dark:border-gray-800">
-        <DemoToggle />
+      {/* Settings at bottom */}
+      <div className="mt-auto">
+        <button
+          title="Settings"
+          className="flex h-11 w-11 items-center justify-center rounded-xl transition-all hover:bg-white/[0.04]"
+        >
+          <Settings className="h-5 w-5" style={{ color: 'var(--muted-2)' }} />
+        </button>
       </div>
     </aside>
   );

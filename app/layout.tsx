@@ -35,11 +35,12 @@ export default function RootLayout({
   const content = (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 dark:bg-gray-950`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        style={{ background: 'var(--background)' }}
       >
         <DemoProvider>
           <Sidebar />
-          <main className="ml-16 md:ml-64 min-h-screen transition-all">
+          <main className="ml-[68px] min-h-screen transition-all">
             {children}
           </main>
         </DemoProvider>
