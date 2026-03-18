@@ -56,7 +56,7 @@ export default function TrainingPage() {
 
             {activeTab === 'log' && (
               <>
-                {program && program.program_data[0]?.days[0] ? (
+                {program && Array.isArray(program.program_data) && program.program_data[0]?.days?.[0] ? (
                   <WorkoutLogger
                     day={program.program_data[0].days[0]}
                     onSave={(log: WorkoutLog) => {

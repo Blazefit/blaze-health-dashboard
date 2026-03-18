@@ -165,9 +165,10 @@ export function ProgramView({ program }: ProgramViewProps) {
     });
   };
 
-  const currentWeekData = program.program_data.find(
+  const programWeeks = Array.isArray(program.program_data) ? program.program_data : [];
+  const currentWeekData = programWeeks.find(
     (w) => w.week === program.current_week
-  ) ?? program.program_data[0];
+  ) ?? programWeeks[0];
 
   return (
     <div className="space-y-5">
@@ -254,7 +255,7 @@ export function ProgramView({ program }: ProgramViewProps) {
           )}
         </div>
 
-        {program.config.constraints.length > 0 && (
+        {program.config?.constraints?.length > 0 && (
           <div className="mt-4">
             <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
               <AlertCircle className="h-3.5 w-3.5" />
